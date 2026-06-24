@@ -27,7 +27,18 @@ export function graphErrorMessage(payload: Record<string, unknown>) {
 
   if (typeof error === 'object' && error !== null && 'message' in error) {
     const message = error.message;
-    return typeof message === 'string' ? message : 'Meta validation failed.';
+    const code = 'code' in error ? error.code : undefined;
+    const subcode = 'error_subcode' in error ? error.error_subcode : undefined;
+    const detail = [
+      typeof code === 'number' ? `code ${code}` : undefined,
+      typeof subcode === 'number' ? `subcode ${subcode}` : undefined,
+    ]
+      .filter(Boolean)
+      .join(', ');
+
+    if (typeof message === 'string') {
+      return detail ? `${message} (${detail}).` : message;
+    }
   }
 
   return 'Meta validation failed.';

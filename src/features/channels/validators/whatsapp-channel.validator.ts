@@ -25,10 +25,10 @@ export class WhatsAppChannelValidator implements BaseChannelValidator {
     );
     const wabaId = getRequiredString(credentials, 'waba_id', 'WhatsApp');
     const accessToken = getRequiredString(credentials, 'access_token', 'WhatsApp');
-    const fields =
-      'id,display_phone_number,verified_name,whatsapp_business_account';
+    const fields = 'id,display_phone_number,verified_name';
     const response = await fetch(
-      `https://graph.facebook.com/v20.0/${phoneNumberId}?fields=${fields}&access_token=${accessToken}`,
+      `https://graph.facebook.com/v20.0/${encodeURIComponent(phoneNumberId)}?fields=${encodeURIComponent(fields)}`,
+      { headers: this.authorizationHeaders(accessToken) },
     );
     const payload = await readJsonResponse(response);
 
@@ -36,9 +36,9 @@ export class WhatsAppChannelValidator implements BaseChannelValidator {
       throw new BadRequestException(graphErrorMessage(payload));
     }
 
-    const linkedWabaId = this.resolveLinkedWabaId(payload);
+    const wabaPhoneNumbers = await this.getWabaPhoneNumbers(wabaId, accessToken);
 
-    if (linkedWabaId && linkedWabaId !== wabaId) {
+    if (!wabaPhoneNumbers.includes(String(payload.id ?? phoneNumberId))) {
       throw new BadRequestException(
         'WhatsApp Phone Number ID does not belong to the supplied WABA ID.',
       );
@@ -59,14 +59,38 @@ export class WhatsAppChannelValidator implements BaseChannelValidator {
     };
   }
 
-  private resolveLinkedWabaId(payload: Record<string, unknown>) {
-    const account = payload.whatsapp_business_account;
+  private async getWabaPhoneNumbers(wabaId: string, accessToken: string) {
+    const fields = 'id';
+    const response = await fetch(
+      `https://graph.facebook.com/v20.0/${encodeURIComponent(wabaId)}/phone_numbers?fields=${fields}&limit=100`,
+      { headers: this.authorizationHeaders(accessToken) },
+    );
+    const payload = await readJsonResponse(response);
 
-    if (typeof account === 'object' && account !== null && 'id' in account) {
-      const id = account.id;
-      return typeof id === 'string' ? id : String(id);
+    if (!response.ok) {
+      throw new BadRequestException(graphErrorMessage(payload));
     }
 
-    return null;
+    const data = payload.data;
+
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data.flatMap((phoneNumber) => {
+      if (
+        typeof phoneNumber === 'object' &&
+        phoneNumber !== null &&
+        'id' in phoneNumber
+      ) {
+        return [String(phoneNumber.id)];
+      }
+
+      return [];
+    });
+  }
+
+  private authorizationHeaders(accessToken: string) {
+    return { Authorization: `Bearer ${accessToken}` };
   }
 }
