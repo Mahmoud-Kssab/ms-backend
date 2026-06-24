@@ -1,4 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createHmac } from 'crypto';
 
 import { ChannelProvider } from '../enums/channel-provider.enum';
 import {
@@ -15,6 +17,8 @@ import {
 export class WhatsAppChannelValidator implements BaseChannelValidator {
   readonly provider = ChannelProvider.WhatsApp;
 
+  constructor(private readonly configService: ConfigService) {}
+
   async validate(
     credentials: Record<string, unknown>,
   ): Promise<ValidatedChannelProfile> {
@@ -27,7 +31,7 @@ export class WhatsAppChannelValidator implements BaseChannelValidator {
     const accessToken = getRequiredString(credentials, 'access_token', 'WhatsApp');
     const fields = 'id,display_phone_number,verified_name';
     const response = await fetch(
-      `https://graph.facebook.com/v20.0/${encodeURIComponent(phoneNumberId)}?fields=${encodeURIComponent(fields)}`,
+      this.graphUrl(phoneNumberId, { fields }, accessToken),
       { headers: this.authorizationHeaders(accessToken) },
     );
     const payload = await readJsonResponse(response);
@@ -62,7 +66,7 @@ export class WhatsAppChannelValidator implements BaseChannelValidator {
   private async getWabaPhoneNumbers(wabaId: string, accessToken: string) {
     const fields = 'id';
     const response = await fetch(
-      `https://graph.facebook.com/v20.0/${encodeURIComponent(wabaId)}/phone_numbers?fields=${fields}&limit=100`,
+      this.graphUrl(`${wabaId}/phone_numbers`, { fields, limit: '100' }, accessToken),
       { headers: this.authorizationHeaders(accessToken) },
     );
     const payload = await readJsonResponse(response);
@@ -92,5 +96,23 @@ export class WhatsAppChannelValidator implements BaseChannelValidator {
 
   private authorizationHeaders(accessToken: string) {
     return { Authorization: `Bearer ${accessToken}` };
+  }
+
+  private graphUrl(
+    path: string,
+    parameters: Record<string, string>,
+    accessToken: string,
+  ) {
+    const query = new URLSearchParams(parameters);
+    const appSecret = this.configService.get<string>('app.whatsappAppSecret');
+
+    if (appSecret) {
+      query.set(
+        'appsecret_proof',
+        createHmac('sha256', appSecret).update(accessToken).digest('hex'),
+      );
+    }
+
+    return `https://graph.facebook.com/v20.0/${encodeURI(path)}?${query.toString()}`;
   }
 }
