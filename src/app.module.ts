@@ -12,6 +12,7 @@ import { HealthModule } from './features/health/health.module';
 import { RbacModule } from './features/rbac/rbac.module';
 import { RealtimeModule } from './features/realtime/realtime.module';
 import { UsersModule } from './features/users/users.module';
+import { WebhooksModule } from './features/webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { UsersModule } from './features/users/users.module';
     RbacModule,
     RealtimeModule,
     UsersModule,
+    WebhooksModule,
   ],
 })
 export class AppModule {}

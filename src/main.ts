@@ -5,7 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const configService = app.get(ConfigService);
   const frontendOrigin = configService.getOrThrow<string>('app.frontendOrigin');
   const allowedOrigins = new Set([
@@ -15,7 +15,7 @@ async function bootstrap() {
   ]);
 
   app.enableCors({
-    // Temporary local-dev CORS relaxation for testing auth/RBAC from either localhost host.
+    // Allow the configured frontend plus both supported local development hosts.
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.has(origin)) {
         callback(null, true);
