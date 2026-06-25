@@ -8,6 +8,7 @@ import { redisConfig } from './common/config/redis.config';
 import { RedisProviderModule } from './common/providers/redis-provider.module';
 import { AuthModule } from './features/auth/auth.module';
 import { ChannelsModule } from './features/channels/channels.module';
+import { ConversationsModule } from './features/conversations/conversations.module';
 import { HealthModule } from './features/health/health.module';
 import { RbacModule } from './features/rbac/rbac.module';
 import { RealtimeModule } from './features/realtime/realtime.module';
@@ -37,6 +38,7 @@ import { WebhooksModule } from './features/webhooks/webhooks.module';
     RedisProviderModule,
     AuthModule,
     ChannelsModule,
+    ConversationsModule,
     HealthModule,
     RbacModule,
     RealtimeModule,

@@ -27,5 +27,6 @@ import { WhatsAppChannelValidator } from './validators/whatsapp-channel.validato
     MessengerChannelValidator,
     InstagramChannelValidator,
   ],
+  exports: [ChannelCredentialsService],
 })
 export class ChannelsModule {}

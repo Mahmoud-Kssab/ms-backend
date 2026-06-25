@@ -5,6 +5,6 @@ import { RealtimeRoomService } from './services/realtime-room.service';
 
 @Module({
   providers: [AppEventsGateway, RealtimeRoomService],
-  exports: [RealtimeRoomService],
+  exports: [AppEventsGateway, RealtimeRoomService],
 })
 export class RealtimeModule {}
